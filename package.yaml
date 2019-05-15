@@ -1,0 +1,48 @@
+name:                watson-stt-client
+version:             0.1.0.0
+github:              "alx741/watson-stt-client"
+license:             BSD3
+author:              "Daniel Campoverde"
+maintainer:          "alx@sillybytes.net"
+copyright:           "2019 Daniel Campoverde"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/alx741/watson-stt-client#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+
+executables:
+  watson-stt-client-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - watson-stt-client
+
+tests:
+  watson-stt-client-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - watson-stt-client
