@@ -4,14 +4,14 @@ module Client where
 
 import           Control.Concurrent   (forkIO)
 import           Control.Monad        (forever)
-import           Data.Aeson           (decode)
+import           Data.Aeson           (ToJSON, decode)
 import           Data.Aeson.Text      (encodeToLazyText)
 import qualified Data.ByteString.Lazy as LBS (hGet)
 import           Data.Text            as T (Text, concat, unpack)
 
 import Network.WebSockets (ClientApp, Connection, receiveData, sendBinaryData,
                            sendClose, sendTextData)
-import System.IO          (hPrint, stderr, stdin)
+import System.IO          (hFlush, hPrint, stderr, stdin, stdout)
 import Wuss               (runSecureClient)
 
 import Types
@@ -39,26 +39,36 @@ app conn = do
     putStrLn "-- Connected"
 
     -- Send audio data
-    sendTextData conn $ encodeToLazyText startRecognitionReq
+    startRequest conn
     _ <- forkIO $ forever $ sendStdinRaw conn 25600 -- 0.1 seconds at 256kbps (16bit, 16khz)
+
 
     -- Recive answers
     _ <- forever $ do
             rawResponse <- receiveData conn
 
             case decode rawResponse :: Maybe RecognitionResults of
-                Just result -> putStr $ unpack $ prettyResult result
-                Nothing     -> pure ()
+                Just result -> do
+                    putStr $ unpack $ prettyResult result
+                    hFlush stdout
+                Nothing -> pure ()
 
             case decode rawResponse :: Maybe ErrorResponse of
-                Just (ErrorResponse e)
-                    | e == "Session timed out." ->
-                        sendTextData conn $ encodeToLazyText startRecognitionReq
-                    | otherwise -> hPrint stderr e
+                -- Restart upon error
+                Just (ErrorResponse e) -> startRequest conn >> hPrint stderr e
                 Nothing -> pure ()
 
     -- FIXME: When to close the connection?
     sendClose conn ("" :: Text)
+
+startRequest :: Connection -> IO ()
+startRequest = request startRecognitionReq
+
+stopRequest :: Connection -> IO ()
+stopRequest = request stopRecognitionReq
+
+request :: ToJSON a => a -> Connection -> IO ()
+request req conn = sendTextData conn $ encodeToLazyText req
 
 prettyResult :: RecognitionResults -> Text
 prettyResult (RecognitionResults rs) = T.concat $ transcript <$> concatMap alternatives rs
