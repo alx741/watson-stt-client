@@ -14,6 +14,14 @@ startRecognitionReq = RecognitionRequest "start" $ Just "audio/l16;rate=16000"
 stopRecognitionReq :: RecognitionRequest
 stopRecognitionReq = RecognitionRequest "stop" Nothing
 
+data StateResponse = StateResponse
+    { state :: Text
+    } deriving (Show, Eq, Generic)
+
+data ErrorResponse = ErrorResponse
+    { error :: Text
+    } deriving (Show, Eq, Generic)
+
 data RecognitionRequest = RecognitionRequest
     { action      :: Text
     , contentType :: Maybe Text
@@ -36,6 +44,8 @@ data RecognitionAlternative = RecognitionAlternative
 instance FromJSON RecognitionAlternative
 instance FromJSON RecognitionResult
 instance FromJSON RecognitionResults
+instance FromJSON StateResponse
+instance FromJSON ErrorResponse
 
 instance ToJSON RecognitionRequest where
     toJSON (RecognitionRequest reqAction mContentType) =
