@@ -3,13 +3,17 @@
 module Client where
 
 import           Control.Concurrent   (forkIO)
+import           Control.Monad        (forever)
 import           Data.Aeson           (decode)
 import           Data.Aeson.Text      (encodeToLazyText)
-import qualified Data.ByteString.Lazy as LBS (readFile)
+import qualified Data.ByteString.Lazy as LBS (hGet, readFile)
 import           Data.Text            as T (Text, concat, unpack)
-import           Network.WebSockets   (ClientApp, receiveData, sendBinaryData,
-                                       sendClose, sendTextData)
-import           Wuss                 (runSecureClient)
+
+import Control.Concurrent (threadDelay)
+import Network.WebSockets (ClientApp, Connection, receiveData, sendBinaryData,
+                           sendClose, sendTextData)
+import System.IO          (stdin)
+import Wuss               (runSecureClient)
 
 import Types
 
@@ -18,29 +22,32 @@ uri accessToken = "/speech-to-text/api/v1/recognize"
     <> "?access_token=" <> accessToken
     <> "&model=es-ES_BroadbandModel"
 
-run :: FilePath -> FilePath -> IO ()
-run token wav = filter (/= '\n') <$> readFile token
-    >>= (\accessToken -> runSecureClient host 443 (uri accessToken) $ app wav)
+run :: FilePath -> IO ()
+run token = filter (/= '\n') <$> readFile token
+    >>= (\accessToken -> runSecureClient host 443 (uri accessToken) app)
 
-app :: FilePath -> ClientApp ()
-app wav conn = do
+sendStdinRaw :: Connection -> Int -> IO ()
+sendStdinRaw conn bytes = do
+    raw <- LBS.hGet stdin bytes
+    sendBinaryData conn raw
+    sendTextData conn $ encodeToLazyText stopRecognitionReq
+
+app :: ClientApp ()
+app conn = do
     putStrLn "-- Connected"
 
-    sendTextData conn $ encodeToLazyText startRecognitionReq
-
     -- Send audio data
-    _ <- forkIO $ do
-        raw <- LBS.readFile wav
-        sendBinaryData conn raw
-        sendTextData conn $ encodeToLazyText stopRecognitionReq
+    sendTextData conn $ encodeToLazyText startRecognitionReq
+    _ <- forkIO $ forever $ sendStdinRaw conn 25600 -- 0.1 seconds at 256kbps (16bit, 16khz)
 
     -- Recive answers
     let loop = do
             rawResponse <- receiveData conn
             let mResult = decode rawResponse :: Maybe RecognitionResults
+            -- print rawResponse
             case mResult of
-                Just result -> putStrLn $ unpack $ prettyResult result
-                Nothing     -> putStrLn $ "-- " <> show rawResponse
+                Just result -> putStr $ unpack $ prettyResult result
+                Nothing -> putStrLn $ "-- " <> show rawResponse
             loop
     loop
 
