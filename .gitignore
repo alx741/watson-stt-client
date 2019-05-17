@@ -4,3 +4,5 @@ watson-stt-client.cabal
 
 access_token
 api_key
+
+*.wav
