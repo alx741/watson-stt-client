@@ -4,7 +4,6 @@
 module Types where
 
 import Data.Aeson
-import Data.ByteString.Lazy (ByteString)
 import Data.Maybe           (fromMaybe)
 import Data.Text            (Text)
 import GHC.Generics         (Generic)
@@ -39,8 +38,8 @@ instance FromJSON RecognitionResult
 instance FromJSON RecognitionResults
 
 instance ToJSON RecognitionRequest where
-    toJSON (RecognitionRequest action mContentType) =
+    toJSON (RecognitionRequest reqAction mContentType) =
         object
-            [ "action" .= action
+            [ "action" .= reqAction
             , "content-type" .= fromMaybe "" mContentType
             ]
