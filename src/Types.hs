@@ -9,7 +9,7 @@ import Data.Text            (Text)
 import GHC.Generics         (Generic)
 
 startRecognitionReq :: RecognitionRequest
-startRecognitionReq = RecognitionRequest "start" $ Just "audio/wav"
+startRecognitionReq = RecognitionRequest "start" $ Just "audio/l16;rate=16000"
 
 stopRecognitionReq :: RecognitionRequest
 stopRecognitionReq = RecognitionRequest "stop" Nothing
