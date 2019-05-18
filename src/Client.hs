@@ -3,6 +3,7 @@
 module Client where
 
 import           Control.Concurrent   (forkIO)
+import           Control.Concurrent   (threadDelay)
 import           Control.Monad        (forever)
 import           Data.Aeson           (ToJSON, decode)
 import           Data.Aeson.Text      (encodeToLazyText)
@@ -70,7 +71,7 @@ app conn = do
     sendClose conn ("" :: Text)
 
 startRequest :: Connection -> IO ()
-startRequest = request startRecognitionReq
+startRequest conn = request startRecognitionReq conn >> threadDelay 50000
 
 stopRequest :: Connection -> IO ()
 stopRequest = request stopRecognitionReq
