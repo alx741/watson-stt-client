@@ -24,9 +24,17 @@ uri accessToken = "/speech-to-text/api/v1/recognize"
     <> "?access_token=" <> accessToken
     <> "&model=es-ES_BroadbandModel"
 
+-- run :: FilePath -> IO ()
+-- run token = filter (/= '\n') <$> readFile token
+--     >>= (\accessToken -> runSecureClient host 443 (uri accessToken) app)
+
 run :: FilePath -> IO ()
-run token = filter (/= '\n') <$> readFile token
-    >>= (\accessToken -> runSecureClient host 443 (uri accessToken) app)
+run apikey = filter (/= '\n') <$> readFile apikey
+    >>= getAccessToken
+    >>= (\(AccessToken token) -> runSecureClient host 443 (uri token) app)
+
+getAccessToken :: String -> IO AccessToken
+getAccessToken _ = AccessToken <$> filter (/= '\n') <$> readFile "access_token"
 
 sendStdinRaw :: Connection -> Int -> IO ()
 sendStdinRaw conn bytes = do
