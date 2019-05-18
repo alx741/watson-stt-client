@@ -7,7 +7,7 @@ import           Control.Monad        (forever)
 import           Data.Aeson           (ToJSON, decode)
 import           Data.Aeson.Text      (encodeToLazyText)
 import qualified Data.ByteString.Lazy as LBS (hGet)
-import           Data.Text            as T (Text, concat, unpack)
+import           Data.Text            as T (Text, unpack)
 
 import Network.WebSockets (ClientApp, Connection, receiveData, sendBinaryData,
                            sendClose, sendTextData)
@@ -69,6 +69,3 @@ stopRequest = request stopRecognitionReq
 
 request :: ToJSON a => a -> Connection -> IO ()
 request req conn = sendTextData conn $ encodeToLazyText req
-
-prettyResult :: RecognitionResults -> Text
-prettyResult (RecognitionResults rs) = T.concat $ transcript <$> concatMap alternatives rs
