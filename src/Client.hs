@@ -2,8 +2,7 @@
 
 module Client where
 
-import           Control.Concurrent   (forkIO)
-import           Control.Concurrent   (threadDelay)
+import           Control.Concurrent   (forkIO, threadDelay)
 import           Control.Monad        (forever)
 import           Data.Aeson           (ToJSON, decode)
 import           Data.Aeson.Text      (encodeToLazyText)
@@ -25,17 +24,9 @@ uri accessToken = "/speech-to-text/api/v1/recognize"
     <> "?access_token=" <> accessToken
     <> "&model=es-ES_BroadbandModel"
 
--- run :: FilePath -> IO ()
--- run token = filter (/= '\n') <$> readFile token
---     >>= (\accessToken -> runSecureClient host 443 (uri accessToken) app)
-
 run :: FilePath -> IO ()
-run apikey = filter (/= '\n') <$> readFile apikey
-    >>= getAccessToken
-    >>= (\(AccessToken token) -> runSecureClient host 443 (uri token) app)
-
-getAccessToken :: String -> IO AccessToken
-getAccessToken _ = AccessToken <$> filter (/= '\n') <$> readFile "access_token"
+run token = filter (/= '\n') <$> readFile token
+    >>= (\accessToken -> runSecureClient host 443 (uri accessToken) app)
 
 sendStdinRaw :: Connection -> Int -> IO ()
 sendStdinRaw conn bytes = do
@@ -50,7 +41,6 @@ app conn = do
     -- Send audio data
     startRequest conn
     _ <- forkIO $ forever $ sendStdinRaw conn 25600 -- 0.1 seconds at 256kbps (16bit, 16khz)
-
 
     -- Recive answers
     _ <- forever $ do
