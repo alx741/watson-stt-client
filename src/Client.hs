@@ -16,17 +16,24 @@ import Wuss               (runSecureClient)
 
 import Types
 
+data ClientConfig = ClientConfig
+    { model                  :: String -- ^ e.g. "es-ES_BroadbandModel
+    , secondsPerTransmission :: Float -- ^ e.g. 0.1 (a good default)
+    } deriving (Show)
+
 host :: String
 host = "stream.watsonplatform.net"
 
-uri :: String -> String
-uri accessToken = "/speech-to-text/api/v1/recognize"
+uri :: String -> String -> String
+uri accessToken m = "/speech-to-text/api/v1/recognize"
     <> "?access_token=" <> accessToken
-    <> "&model=es-ES_BroadbandModel"
+    <> "&model=" <> m
 
-run :: FilePath -> IO ()
-run token = filter (/= '\n') <$> readFile token
-    >>= (\accessToken -> runSecureClient host 443 (uri accessToken) app)
+run :: ClientConfig -> FilePath ->  IO ()
+run (ClientConfig m s) token =
+    filter (/= '\n') <$> readFile token
+    >>= (\accessToken ->
+        runSecureClient host 443 (uri accessToken m) (app s))
 
 sendStdinRaw :: Connection -> Int -> IO ()
 sendStdinRaw conn bytes = do
@@ -34,13 +41,13 @@ sendStdinRaw conn bytes = do
     sendBinaryData conn raw
     sendTextData conn $ encodeToLazyText stopRecognitionReq
 
-app :: ClientApp ()
-app conn = do
+app :: Float -> ClientApp ()
+app seconds conn = do
     putStrLn "-- Connected"
 
     -- Send audio data
     startRequest conn
-    _ <- forkIO $ forever $ sendStdinRaw conn 25600 -- 0.1 seconds at 256kbps (16bit, 16khz)
+    _ <- forkIO $ forever $ sendStdinRaw conn $ floor $ 16.0 * 16000.0 * seconds
 
     -- Recive answers
     _ <- forever $ do
