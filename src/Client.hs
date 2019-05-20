@@ -63,7 +63,6 @@ app seconds pipeline conn = do
         receiveTranscripts :: IO Text
         receiveTranscripts = do
             rawResponse <- receiveData conn
-            print rawResponse
             case decode rawResponse :: Maybe RecognitionResults of
                 Just result -> pure $ prettyResult result
                 Nothing ->

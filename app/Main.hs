@@ -1,15 +1,16 @@
 module Main where
 
-import Control.Monad (forever)
+import Client
 import Conduit
 import Data.Text (Text)
-import Client
 
 config :: ClientConfig
-config = ClientConfig "es-ES_BroadbandModel" 0.1
+config = ClientConfig "es-ES_BroadbandModel" 0.25
 
 main :: IO ()
-main = runStreamWithSpeech config "access_token" sink
+main = do
+    token <- filter (/= '\n') <$> readFile "access_token"
+    runStreamWithSpeech config token sink
 
 sink :: ConduitT Text Void IO ()
 sink = awaitForever $ liftIO . print
