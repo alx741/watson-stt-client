@@ -26,6 +26,7 @@ dependencies:
 - text
 - aeson
 - wuss
+- conduit
 
 library:
   source-dirs: src
