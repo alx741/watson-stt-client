@@ -10,7 +10,7 @@ config = ClientConfig "es-ES_BroadbandModel" 0.25
 main :: IO ()
 main = do
     token <- filter (/= '\n') <$> readFile "access_token"
-    runStreamWithSpeech config token sink
+    runPipelineWithSpeech config token sink
 
 sink :: ConduitT Text Void IO ()
 sink = awaitForever $ liftIO . print

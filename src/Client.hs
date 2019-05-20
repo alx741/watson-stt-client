@@ -3,7 +3,7 @@
 module Client
     ( Pipeline
     , ClientConfig(..)
-    , runStreamWithSpeech
+    , runPipelineWithSpeech
     ) where
 
 import           Conduit
@@ -30,12 +30,12 @@ data ClientConfig = ClientConfig
     } deriving (Show)
 
 
-runStreamWithSpeech
+runPipelineWithSpeech
  :: ClientConfig
  -> String -- ^ IBM Watson access token
  -> Pipeline -- ^ Conduit pipeline to run
  -> IO ()
-runStreamWithSpeech (ClientConfig m s) token pipeline =
+runPipelineWithSpeech (ClientConfig m s) token pipeline =
     runSecureClient host 443 uri (app s pipeline)
     where
         host = "stream.watsonplatform.net"
