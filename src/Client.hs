@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Client where
+module Client
+    ( Pipeline
+    , ClientConfig(..)
+    , runStreamWithSpeech
+    ) where
 
 import           Conduit
 import           Control.Concurrent   (forkIO, threadDelay)
@@ -17,6 +21,7 @@ import           Wuss                 (runSecureClient)
 import Types
 
 
+-- | Conduit pipeline that takes /speech text/ as input
 type Pipeline = ConduitT Text Void IO ()
 
 data ClientConfig = ClientConfig
@@ -24,19 +29,19 @@ data ClientConfig = ClientConfig
     , secondsPerTransmission :: Float -- ^ e.g. 0.1 (a good default)
     } deriving (Show)
 
-host :: String
-host = "stream.watsonplatform.net"
 
-uri :: String -> String -> String
-uri accessToken m = "/speech-to-text/api/v1/recognize"
-    <> "?access_token=" <> accessToken
-    <> "&model=" <> m
-
-runStreamWithSpeech :: ClientConfig -> FilePath -> Pipeline -> IO ()
+runStreamWithSpeech
+ :: ClientConfig
+ -> String -- ^ IBM Watson access token
+ -> Pipeline -- ^ Conduit pipeline to run
+ -> IO ()
 runStreamWithSpeech (ClientConfig m s) token pipeline =
-    filter (/= '\n') <$> readFile token
-    >>= (\accessToken ->
-        runSecureClient host 443 (uri accessToken m) (app s pipeline))
+    runSecureClient host 443 uri (app s pipeline)
+    where
+        host = "stream.watsonplatform.net"
+        uri = "/speech-to-text/api/v1/recognize"
+            <> "?access_token=" <> token
+            <> "&model=" <> m
 
 app :: Float -> Pipeline -> ClientApp ()
 app seconds pipeline conn = do
@@ -58,6 +63,7 @@ app seconds pipeline conn = do
         receiveTranscripts :: IO Text
         receiveTranscripts = do
             rawResponse <- receiveData conn
+            print rawResponse
             case decode rawResponse :: Maybe RecognitionResults of
                 Just result -> pure $ prettyResult result
                 Nothing ->
