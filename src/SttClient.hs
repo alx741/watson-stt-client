@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Client
+module SttClient
     ( Pipeline
     , ClientConfig(..)
     , runPipelineWithSpeech

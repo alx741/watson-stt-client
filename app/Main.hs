@@ -1,6 +1,6 @@
 module Main where
 
-import Client
+import SttClient
 import Conduit
 import Data.Text (Text)
 
