@@ -1,18 +1,26 @@
 module Main where
 
-import SttClient
 import Conduit
-import Data.Text (Text)
+import Control.Monad (forever)
+import Data.Text     (Text)
+import SttClient
 
-config :: ClientConfig
-config = ClientConfig "es-ES_BroadbandModel" 0.25
+-- arecord -f S16_LE -c1 -r 16000 -t raw | stack exec client
 
 main :: IO ()
 main = do
     token <- filter (/= '\n') <$> readFile "access_token"
-    runPipelineWithSpeech config token sink
+    runWithSpeech config token client
+
+config :: ClientConfig
+config = ClientConfig "es-ES_BroadbandModel" 0.25
+
+client :: Connection -> IO ()
+client conn = do
+    runConduit $ speechSource conn .| sink
+
+speechSource :: Connection -> ConduitT () Text IO ()
+speechSource conn = forever $ yieldM $ receiveTranscripts conn
 
 sink :: ConduitT Text Void IO ()
 sink = awaitForever $ liftIO . print
-
--- arecord -f S16_LE -c1 -r 16000 -t raw | stack exec client
