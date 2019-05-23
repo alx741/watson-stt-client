@@ -23,22 +23,34 @@ config :: ClientConfig
 config = ClientConfig "es-ES_BroadbandModel" 0.25
 ```
 
-2. Make a `Conduit` pipeline  that does what you actually need
+2. Define an application `Connection -> IO ()` using the `receiveTranscripts`
+function
+
+`app/Main.hs` provides an example that uses a Conduit pipeline as application:
 
 ```haskell
-type Pipeline = ConduitT Text Void IO ()
+module Main where
 
--- Just print out the speech
-myPipeline :: Pipeline
-myPipeline = awaitForever $ liftIO . print
-```
+import Conduit
+import Control.Monad (forever)
+import Data.Text     (Text)
+import SttClient
 
-3. Run the pipeline with a valid `access token` (which you can get by running
-the `get_access_token.sh` script)
-
-```haskell
 main :: IO ()
 main = do
-    token <- filter (/= '\n') <$> readFile "access_token"
-    runPipelineWithSpeech config token sink
+    token <- filter (/= '\n') <$> readFile "./access_token"
+    runWithSpeech config token client
+
+config :: ClientConfig
+config = ClientConfig "es-ES_BroadbandModel" 0.25
+
+client :: Connection -> IO ()
+client conn = do
+    runConduit $ speechSource conn .| sink
+
+speechSource :: Connection -> ConduitT () Text IO ()
+speechSource conn = forever $ yieldM $ receiveTranscripts conn
+
+sink :: ConduitT Text Void IO ()
+sink = awaitForever $ liftIO . print
 ```
